@@ -361,6 +361,15 @@ export class SkySystem {
     this._applyFog();
     this.setTimeOfDay(this.hour);
 
+    const onSettingChange = () => {
+      if (this.volumetrics) {
+        this.volumetrics.marchEnabled = !!this.ctx.config.q?.volumetrics;
+        this.volumetrics.reset();
+      }
+    };
+    ctx.events.on('ui:quality', onSettingChange);
+    ctx.events.on('ui:setting', onSettingChange);
+
     console.info(
       `[sky] atmosphere ready · lat ${this.celestial.site.latitudeDeg} · ` +
         `vol ${q.volumetrics ? steps + ' steps @1/2' : 'analytic'} · ` +

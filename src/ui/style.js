@@ -597,53 +597,161 @@ const CSS = `
   background: linear-gradient(to right, transparent, rgba(255,255,255,.5), transparent);
 }
 
-/* ================================================================== menu */
+/* ================================================================== GTA V Style Menu */
 .ow-menu {
-  position:absolute; inset:0; pointer-events:auto;
-  background: linear-gradient(105deg, rgba(4,6,8,.90) 0%, rgba(4,6,8,.72) 46%, rgba(4,6,8,.42) 100%);
-  backdrop-filter: blur(calc(9px * var(--k))) saturate(.7) brightness(.8);
+  position:fixed; inset:0; pointer-events:auto;
+  background: radial-gradient(circle at 18% 50%, rgba(6,10,14,0.94) 0%, rgba(4,6,8,0.88) 60%, rgba(2,3,5,0.78) 100%);
+  backdrop-filter: blur(calc(12px * var(--k))) saturate(.8) brightness(.75);
   opacity:0; will-change: opacity;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
 }
-.ow-menu-inner {
-  position:absolute; left: calc(var(--u) * 22); top:50%;
-  transform: translateY(-50%);
-  width: calc(430px * var(--k));
-  padding-left: calc(var(--u) * 4.5);
-  border-left: calc(2px * var(--k)) solid var(--amber);
+.ow-menu-container {
+  width: min(94vw, calc(1040px * var(--k)));
+  height: min(88vh, calc(720px * var(--k)));
+  display: flex; flex-direction: column;
+  background: rgba(8, 12, 16, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 calc(20px * var(--k)) calc(60px * var(--k)) rgba(0,0,0,0.9);
+  padding: calc(var(--u) * 4) calc(var(--u) * 6);
+  border-top: calc(3px * var(--k)) solid var(--amber);
 }
-.ow-menu h1 {
-  font-family: var(--fd);
-  font-size: calc(46px * var(--k)); font-weight:700; letter-spacing:.3em;
-  text-shadow: 0 2px 6px rgba(0,0,0,.8);
-}
-.ow-menu .sub {
-  margin-top: calc(var(--u) * 1.2); font-size: calc(10px * var(--k));
-  letter-spacing:.28em; color: var(--ink-3);
-}
-.ow-menu .rule {
-  margin: calc(var(--u) * 5) 0 calc(var(--u) * 2); height:1px;
-  background: linear-gradient(to right, rgba(255,255,255,.28), rgba(255,255,255,0));
-}
-.ow-row {
-  display:flex; align-items:center; justify-content:space-between;
-  gap: calc(var(--u) * 4); padding: calc(var(--u) * 3.2) 0;
+.ow-menu-header {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  padding-bottom: calc(var(--u) * 3);
   border-bottom: 1px solid var(--hair-2);
 }
-.ow-row > .name { font-size: calc(11.5px * var(--k)); letter-spacing:.2em; color: var(--ink); }
-.ow-row > .val { font-family: var(--fm); font-size: calc(11px * var(--k)); color: var(--amber);
-  letter-spacing:.04em; min-width: calc(46px * var(--k)); text-align:right; }
-.ow-seg { display:flex; gap:0; }
-.ow-seg button {
-  appearance:none; border:1px solid var(--hair); border-right:0; background:rgba(255,255,255,.03);
-  color: var(--ink-2); font-family:var(--ff); font-weight:600; text-transform:uppercase;
-  font-size: calc(10px * var(--k)); letter-spacing:.16em;
-  padding: calc(var(--u) * 1.3) calc(var(--u) * 2.2);
-  cursor:pointer; position:relative; transition: color .12s, background .12s;
+.ow-menu-header h1 {
+  font-family: var(--fd);
+  font-size: calc(34px * var(--k)); font-weight:700; letter-spacing:.25em;
+  color: var(--ink); text-shadow: 0 2px 8px rgba(0,0,0,.8);
+  line-height: 1;
 }
-.ow-seg button:last-child { border-right:1px solid var(--hair); }
-.ow-seg button:hover { color: var(--ink); background: rgba(255,255,255,.07); }
-.ow-seg button.on { color:#0b0d0f; background: var(--ink); }
-.ow-slider { position:relative; width: calc(190px * var(--k)); height: calc(18px * var(--k)); }
+.ow-menu-header .sub {
+  margin-top: calc(var(--u) * 1); font-size: calc(10px * var(--k));
+  letter-spacing:.24em; color: var(--ink-2);
+}
+.ow-menu-tabs {
+  display: flex; gap: calc(var(--u) * 1.5);
+}
+.ow-tab {
+  appearance: none; background: rgba(255,255,255,0.03); border: 1px solid var(--hair-2);
+  color: var(--ink-2); font-family: var(--ff); font-weight: 600; text-transform: uppercase;
+  font-size: calc(11px * var(--k)); letter-spacing: .18em;
+  padding: calc(var(--u) * 1.8) calc(var(--u) * 3.5);
+  cursor: pointer; transition: all .15s ease;
+}
+.ow-tab:hover {
+  color: var(--ink); background: rgba(255,255,255,.08); border-color: var(--hair);
+}
+.ow-tab.active {
+  color: #0b0d0f; background: var(--amber); border-color: var(--amber); font-weight: 700;
+}
+
+/* GTA V Performance Load Bar */
+.ow-gpu-meter {
+  margin: calc(var(--u) * 2.5) 0 calc(var(--u) * 2);
+  padding: calc(var(--u) * 2.2) calc(var(--u) * 3.5);
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.ow-gpu-meter-header {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: calc(10px * var(--k)); letter-spacing: .2em; color: var(--ink-2);
+  margin-bottom: calc(var(--u) * 1.5);
+}
+.ow-gpu-meter-badge {
+  font-family: var(--fm); font-weight: 700; font-size: calc(10px * var(--k));
+  padding: calc(var(--u) * 0.4) calc(var(--u) * 1.5);
+  border-radius: calc(2px * var(--k));
+  letter-spacing: .12em;
+}
+.ow-gpu-meter-badge.ok { background: #1d5220; color: #a4f7a6; }
+.ow-gpu-meter-badge.mod { background: #6e5513; color: #ffeb99; }
+.ow-gpu-meter-badge.heavy { background: #7a1c17; color: #ffbcba; }
+
+.ow-gpu-bar-track {
+  position: relative; width: 100%; height: calc(7px * var(--k));
+  background: rgba(255,255,255,0.1); border-radius: calc(1px * var(--k));
+  overflow: hidden;
+}
+.ow-gpu-bar-fill {
+  height: 100%; width: 25%;
+  background: linear-gradient(90deg, #3db845 0%, #a8e86a 50%, #ffb02a 80%, #ff3f31 100%);
+  transition: width 0.3s ease;
+}
+
+/* Main Content Body */
+.ow-menu-body {
+  display: flex; gap: calc(var(--u) * 5); flex: 1; min-height: 0;
+  margin-top: calc(var(--u) * 2);
+}
+.ow-menu-options {
+  flex: 1.35; overflow-y: auto; padding-right: calc(var(--u) * 2);
+}
+.ow-menu-options::-webkit-scrollbar { width: calc(4px * var(--k)); }
+.ow-menu-options::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); }
+.ow-menu-options::-webkit-scrollbar-thumb { background: var(--amber); }
+
+.ow-menu-panel {
+  flex: 0.95; display: flex; flex-direction: column;
+}
+.ow-desc-box {
+  background: rgba(0,0,0,0.45); border: 1px solid var(--hair-2);
+  padding: calc(var(--u) * 4); flex: 1;
+  display: flex; flex-direction: column;
+}
+.ow-desc-title {
+  font-family: var(--fd); font-size: calc(16px * var(--k));
+  color: var(--amber); letter-spacing: .15em; margin-bottom: calc(var(--u) * 2);
+}
+.ow-desc-text {
+  font-size: calc(11px * var(--k)); line-height: 1.6;
+  color: var(--ink-2); letter-spacing: .06em; flex: 1;
+  text-transform: none;
+}
+.ow-desc-impact {
+  margin-top: calc(var(--u) * 3); padding-top: calc(var(--u) * 2);
+  border-top: 1px solid var(--hair-2); font-size: calc(10.5px * var(--k));
+  letter-spacing: .15em; font-family: var(--fm);
+}
+
+/* Stepper Controls & Rows */
+.ow-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(var(--u) * 2.2) calc(var(--u) * 2);
+  border-bottom: 1px solid var(--hair-2);
+  cursor: pointer; transition: background 0.12s;
+}
+.ow-row:hover, .ow-row.focus {
+  background: rgba(255, 255, 255, 0.07);
+}
+.ow-row > .name {
+  font-size: calc(11.5px * var(--k)); letter-spacing: .16em; color: var(--ink);
+}
+.ow-row > .control {
+  display: flex; align-items: center; gap: calc(var(--u) * 1.5);
+}
+.ow-stepper {
+  display: flex; align-items: center; gap: calc(var(--u) * 1);
+  min-width: calc(210px * var(--k)); justify-content: space-between;
+}
+.ow-step-btn {
+  appearance: none; background: rgba(255,255,255,0.06); border: 1px solid var(--hair);
+  color: var(--ink); width: calc(24px * var(--k)); height: calc(24px * var(--k));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--fm); font-size: calc(12px * var(--k)); cursor: pointer;
+  transition: all 0.12s;
+}
+.ow-step-btn:hover {
+  background: var(--amber); color: #000; border-color: var(--amber);
+}
+.ow-step-val {
+  font-family: var(--fm); font-size: calc(11px * var(--k));
+  color: var(--ink); letter-spacing: .08em; text-align: center; flex: 1;
+}
+
+.ow-slider { position:relative; width: calc(180px * var(--k)); height: calc(18px * var(--k)); }
 .ow-slider .track {
   position:absolute; left:0; right:0; top:50%; height: calc(2px * var(--k));
   transform: translateY(-50%); background: rgba(255,255,255,.16);
@@ -661,21 +769,43 @@ const CSS = `
   position:absolute; inset:0; width:100%; height:100%; margin:0;
   appearance:none; background:transparent; cursor:pointer; opacity:0;
 }
-.ow-btns { margin-top: calc(var(--u) * 5); display:flex; gap: calc(var(--u) * 2.5); }
+
+/* Footer / Actions */
+.ow-menu-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: calc(var(--u) * 3); margin-top: calc(var(--u) * 2);
+  border-top: 1px solid var(--hair-2);
+}
+.ow-btns { display:flex; gap: calc(var(--u) * 2.5); }
 .ow-btn {
-  appearance:none; border:1px solid var(--hair); background: rgba(255,255,255,.04);
+  appearance:none; border:1px solid var(--hair); background: rgba(255,255,255,.05);
   color: var(--ink); font-family: var(--ff); font-weight:600; text-transform:uppercase;
-  font-size: calc(11px * var(--k)); letter-spacing:.2em;
-  padding: calc(var(--u) * 2.2) calc(var(--u) * 5);
+  font-size: calc(11px * var(--k)); letter-spacing:.18em;
+  padding: calc(var(--u) * 2) calc(var(--u) * 4.5);
   cursor:pointer; transition: background .12s, border-color .12s;
 }
-.ow-btn:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.4); }
-.ow-btn.primary { background: var(--amber); border-color: var(--amber); color:#100b02; }
+.ow-btn:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.4); }
+.ow-btn.primary { background: var(--amber); border-color: var(--amber); color:#100b02; font-weight:700; }
 .ow-btn.primary:hover { background:#ffc251; }
-.ow-menu .hint {
-  margin-top: calc(var(--u) * 4); font-size: calc(9.5px * var(--k));
-  letter-spacing:.2em; color: var(--ink-3);
+.ow-btn.reset { background: rgba(255, 63, 49, 0.15); border-color: rgba(255, 63, 49, 0.35); color: #ffbcba; }
+.ow-btn.reset:hover { background: rgba(255, 63, 49, 0.3); border-color: var(--red); }
+.ow-hint {
+  font-size: calc(9.5px * var(--k)); letter-spacing:.18em; color: var(--ink-3);
 }
+
+/* FPS Counter */
+.ow-fps {
+  position: absolute; top: calc(var(--u) * 3.5); right: calc(var(--u) * 4);
+  background: rgba(4, 7, 10, 0.72); border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: calc(var(--u) * 1.2) calc(var(--u) * 2.5);
+  font-family: var(--fm); font-size: calc(11px * var(--k));
+  letter-spacing: .1em; display: flex; align-items: center; gap: calc(var(--u) * 2);
+  box-shadow: var(--sh); border-radius: calc(2px * var(--k)); z-index: 20;
+}
+.ow-fps-val { font-weight: 700; color: var(--ok); }
+.ow-fps-val.mod { color: var(--amber); }
+.ow-fps-val.bad { color: var(--red); }
+.ow-fps-ms { color: var(--ink-2); font-size: calc(9.5px * var(--k)); }
 
 /* ============================================================== fadeouts */
 .ow-hidden { display:none !important; }

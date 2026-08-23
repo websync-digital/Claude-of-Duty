@@ -17,7 +17,7 @@ import { createComposite, createFxaa, createDebug, createViewComposite } from '.
 import { buildFallbackEnvironment } from './env.js';
 import { RenderProbeScene } from './probe.js';
 
-const QUALITY_LEVEL = { low: 0, medium: 1, high: 2, ultra: 3 };
+const QUALITY_LEVEL = { verylow: 0, low: 0, medium: 1, high: 2, ultra: 3, custom: 1 };
 
 /**
  * Registration range at or below which a punctual light counts as a room/street
@@ -185,10 +185,13 @@ export class RenderSystem {
 
     // ---- subsystems of the pipeline --------------------------------------
     this.csm = new CascadedShadowMaps(renderer, {
-      cascades: q.cascades,
-      mapSize: q.shadowMapSize,
-      maxDistance: q.shadowDistance,
+      cascades: q.cascades ?? 1,
+      mapSize: q.shadowMapSize ?? 512,
+      maxDistance: q.shadowDistance ?? 35,
     });
+    if (q.enableShadows === false) {
+      this.csm.enabled = false;
+    }
     this.patcher = new MaterialPatcher(this.csm.uniforms, {
       cascades: this.csm.cascades,
       quality: this.qLevel,
@@ -202,7 +205,7 @@ export class RenderSystem {
     this.motionBlur = q.motionBlur ? new MotionBlur() : null;
     // ADS depth of field. Cheap (half-res gather, 32 taps) and only ever runs
     // while the sights are actually up, so it costs nothing in hipfire.
-    this.dof = this.qLevel >= 1 ? new DepthOfField() : null;
+    this.dof = (this.qLevel >= 1 && q.dof !== false) ? new DepthOfField() : null;
     this.bloom = q.bloom ? new Bloom(this.qLevel >= 2 ? 6 : 5) : null;
     this.exposure = new AutoExposure();
     // Headroom for a physically-scaled sky (sunlit scenes reach ~5000 cd/m2).
@@ -214,7 +217,7 @@ export class RenderSystem {
     this.lut = createGradeLut('default');
     this.composite = createComposite(this.lut);
     this.viewComposite = createViewComposite();
-    this.fxaa = q.taa ? null : createFxaa();
+    this.fxaa = q.taa ? null : (q.fxaa !== false ? createFxaa() : null);
     // MSAA on the viewmodel target only. It is the one buffer whose geometric
     // edges no longer get a temporal filter, and 4x on a single small pass is
     // far cheaper than any spatial substitute at the same quality.
@@ -473,9 +476,85 @@ export class RenderSystem {
     this._visit = this._visit.bind(this);
     this._visitView = this._visitView.bind(this);
 
-    const w = ctx.canvas.clientWidth || 1920;
-    const h = ctx.canvas.clientHeight || 1080;
-    this.resize(w, h, ctx);
+    this.applyConfig = (config) => {
+      const q = config.q;
+      this.q = q;
+      this.qLevel = QUALITY_LEVEL[config.quality] ?? (config.quality === 'verylow' ? 0 : 1);
+
+      // 1. Shadows
+      if (this.csm) {
+        this.csm.enabled = q.enableShadows !== false;
+        if (this.csm.uniforms?.owCsmParams) {
+          this.csm.uniforms.owCsmParams.value.x = this.csm.enabled ? this.settings.shadowStrength : 0;
+        }
+      }
+
+      // 2. GTAO
+      if (q.gtao && !this.gtao) {
+        this.gtao = new Gtao();
+        if (this.screenSize.width > 1) this.gtao.setSize(this.screenSize.width, this.screenSize.height);
+      } else if (!q.gtao && this.gtao) {
+        this.gtao = null;
+        this.aoTexture = null;
+        if (this.patcher?.uniforms?.owAoTex) this.patcher.uniforms.owAoTex.value = null;
+      }
+
+      // 3. SSR
+      if (q.ssr && !this.ssr) {
+        this.ssr = new Ssr();
+        if (this.screenSize.width > 1) this.ssr.setSize(this.screenSize.width, this.screenSize.height);
+      } else if (!q.ssr && this.ssr) {
+        this.ssr = null;
+        if (this.patcher?.uniforms?.owSsrTex) this.patcher.uniforms.owSsrTex.value = null;
+      }
+
+      // 4. AA
+      if (q.taa) {
+        if (!this.taa) {
+          this.taa = new Taa();
+          if (this.screenSize.width > 1) this.taa.setSize(this.screenSize.width, this.screenSize.height);
+        }
+        this.fxaa = null;
+      } else {
+        this.taa = null;
+        if (q.fxaa !== false && !this.fxaa) {
+          this.fxaa = createFxaa();
+        } else if (q.fxaa === false) {
+          this.fxaa = null;
+        }
+      }
+
+      // 5. Motion Blur
+      if (q.motionBlur && !this.motionBlur) {
+        this.motionBlur = new MotionBlur();
+        if (this.screenSize.width > 1) this.motionBlur.setSize(this.screenSize.width, this.screenSize.height);
+      } else if (!q.motionBlur && this.motionBlur) {
+        this.motionBlur = null;
+      }
+
+      // 6. DOF
+      if (q.dof !== false && !this.dof) {
+        this.dof = new DepthOfField();
+        if (this.screenSize.width > 1) this.dof.setSize(this.screenSize.width, this.screenSize.height);
+      } else if (q.dof === false && this.dof) {
+        this.dof = null;
+      }
+
+      // 7. Bloom
+      if (q.bloom && !this.bloom) {
+        this.bloom = new Bloom(this.qLevel >= 2 ? 6 : 5);
+        if (this.screenSize.width > 1) this.bloom.setSize(this.screenSize.width, this.screenSize.height);
+      } else if (!q.bloom && this.bloom) {
+        this.bloom = null;
+      }
+
+      const curW = this.ctx.canvas.clientWidth || 1920;
+      const curH = this.ctx.canvas.clientHeight || 1080;
+      this.resize(curW, curH, this.ctx);
+    };
+
+    ctx.events.on('ui:quality', () => this.applyConfig(ctx.config));
+    ctx.events.on('ui:setting', () => this.applyConfig(ctx.config));
 
     console.info(
       `[render] WebGL2 · ${cfg.quality} · ${this.csm.cascades}x${this.csm.mapSize} CSM · ` +

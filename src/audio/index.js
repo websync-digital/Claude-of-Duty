@@ -531,6 +531,17 @@ export class AudioSystem {
     on('actor:death', (p) => this._onDeath(p));
     // Optional: emitted by `ai` if it wants scripted chatter.
     on('ai:bark', (p) => this.bark(p?.kind ?? 'spot', p?.position, { voice: p?.voice ?? 0 }));
+    on('ui:setting', (p) => {
+      const cfg = ctx.config;
+      if (!cfg) return;
+      if (p?.key === 'masterVolume' || !p) this.setMasterVolume(cfg.masterVolume ?? 1);
+      if (p?.key === 'sfxVolume' || !p) {
+        this.setBusVolume('weapons', (cfg.sfxVolume ?? 1) * 0.95);
+        this.setBusVolume('foley', (cfg.sfxVolume ?? 1) * 0.9);
+      }
+      if (p?.key === 'voiceVolume' || !p) this.setBusVolume('voice', (cfg.voiceVolume ?? 1) * 0.85);
+      if (p?.key === 'musicVolume' || !p) this.setBusVolume('ambience', (cfg.musicVolume ?? 0.7) * 0.5);
+    });
   }
 
   _onFire(p) {

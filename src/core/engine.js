@@ -72,13 +72,18 @@ export class Engine {
     return this;
   }
 
-  async init() {
+  async init(onProgress) {
     const order = this.registry.resolve();
+    let index = 0;
     for (const sys of order) {
+      const id = sys.constructor.id;
+      onProgress?.({ index, total: order.length, id });
       const t0 = performance.now();
       await sys.init?.(this.ctx);
       const ms = performance.now() - t0;
-      if (ms > 50) console.info(`[engine] ${sys.constructor.id} init ${ms.toFixed(0)}ms`);
+      if (ms > 50) console.info(`[engine] ${id} init ${ms.toFixed(0)}ms`);
+      index++;
+      onProgress?.({ index, total: order.length, id });
     }
     this.input.attach();
     addEventListener('resize', this._onResize);

@@ -172,8 +172,11 @@ export async function prewarm(engine, { onProgress = () => {}, transients = fals
 
   try {
     let step = 0;
-    const totalSteps = WARM_POSES.length * 2 + (transients ? transientStages.length : 0) + 1;
-    const tick = () => onProgress(Math.min(1, ++step / totalSteps));
+    const totalSteps = WARM_POSES.length + (transients ? transientStages.length : 0) + 3;
+    const tick = () => {
+      step++;
+      onProgress(step, totalSteps);
+    };
 
     // Pass 1: compile the static world from each pose, with the depth/shadow
     // variants reached by drawing a real frame at that pose.

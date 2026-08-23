@@ -54,7 +54,7 @@ export class MaterialSystem {
     this._anisotropy = q?.anisotropy ?? 8;
     // Texture budget scales with the quality preset; 1K is the reference.
     this._quality =
-      ctx?.config?.quality === 'low' ? 0.5 : ctx?.config?.quality === 'medium' ? 0.75 : 1;
+      (ctx?.config?.quality === 'verylow' || ctx?.config?.quality === 'low') ? 0.5 : ctx?.config?.quality === 'medium' ? 0.75 : 1;
     this._tryBuild();
   }
 

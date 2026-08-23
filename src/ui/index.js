@@ -92,6 +92,14 @@ export class UiSystem {
     this.banner = new Banner(this.chromeLayer);
     this.menu = new PauseMenu(this.root, ctx);
 
+    // In-Game Real-Time FPS & Frame-time Counter
+    this.fpsEl = el('div', 'ow-fps', this.chromeLayer);
+    this.fpsVal = el('span', 'ow-fps-val', this.fpsEl, '60 FPS');
+    this.fpsMs = el('span', 'ow-fps-ms', this.fpsEl, '16.6 ms');
+    this._fpsAccum = 0;
+    this._fpsFrames = 0;
+    this._lastFpsUpdate = 0;
+
     this.health.onBeat = (i) => this.sfx('heartbeat', 0.35 + i * 0.5);
 
     /** Single source of truth for everything the HUD draws. */
@@ -502,6 +510,32 @@ export class UiSystem {
     setStyle(this.chromeLayer, 'opacity', this.hudVisible.toFixed(3));
     setStyle(this.worldLayer, 'opacity', this.hudVisible.toFixed(3));
     setStyle(this.centreLayer, 'opacity', this.hudVisible.toFixed(3));
+
+    // ---- FPS Counter -----------------------------------------------------
+    if (ctx.config.showFps !== false) {
+      setStyle(this.fpsEl, 'display', 'flex');
+      this._fpsFrames++;
+      this._fpsAccum += rawDt;
+      if (t.raw - this._lastFpsUpdate >= 0.25) {
+        const avgDt = this._fpsAccum / Math.max(1, this._fpsFrames);
+        const fps = Math.round(1 / Math.max(1e-4, avgDt));
+        const ms = (avgDt * 1000).toFixed(1);
+        setText(this.fpsVal, `${fps} FPS`);
+        setText(this.fpsMs, `${ms} ms`);
+        if (fps >= 30) {
+          this.fpsVal.className = 'ow-fps-val';
+        } else if (fps >= 20) {
+          this.fpsVal.className = 'ow-fps-val mod';
+        } else {
+          this.fpsVal.className = 'ow-fps-val bad';
+        }
+        this._fpsAccum = 0;
+        this._fpsFrames = 0;
+        this._lastFpsUpdate = t.raw;
+      }
+    } else {
+      setStyle(this.fpsEl, 'display', 'none');
+    }
 
     this.crosshair.update(dt, s);
     this.hit.update(dt);

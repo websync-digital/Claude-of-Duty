@@ -203,6 +203,13 @@ export class FxSystem {
     this._warmed = false;
     if (this._viewmodelPresent()) this._attachView();
 
+    const onFxSettingChange = () => {
+      const b = ctx.config.q?.particleBudget ?? 2000;
+      this.pScale = clamp(b / 12000, 0.2, 1.25);
+    };
+    ctx.events.on('ui:quality', onFxSettingChange);
+    ctx.events.on('ui:setting', onFxSettingChange);
+
     console.info(
       `[fx] atlases ${atlasSize}px in ${bakeMs.toFixed(0)}ms · particles ` +
         `lit ${litCap} add ${addCap} motes ${mote} haze ${hazeCap} · decals ${this.decals.capacity}`

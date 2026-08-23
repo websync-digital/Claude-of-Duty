@@ -514,14 +514,16 @@ export class UiSystem {
     // ---- FPS Counter -----------------------------------------------------
     if (ctx.config.showFps !== false) {
       setStyle(this.fpsEl, 'display', 'flex');
+      const now = performance.now();
       this._fpsFrames++;
-      this._fpsAccum += rawDt;
-      if (t.raw - this._lastFpsUpdate >= 0.25) {
-        const avgDt = this._fpsAccum / Math.max(1, this._fpsFrames);
-        const fps = Math.round(1 / Math.max(1e-4, avgDt));
-        const ms = (avgDt * 1000).toFixed(1);
+      if (!this._lastFpsTime) this._lastFpsTime = now;
+      const elapsedMs = now - this._lastFpsTime;
+      if (elapsedMs >= 300) {
+        const avgFrameMs = elapsedMs / Math.max(1, this._fpsFrames);
+        const fps = Math.round(1000 / Math.max(1, avgFrameMs));
+        const msStr = avgFrameMs.toFixed(1);
         setText(this.fpsVal, `${fps} FPS`);
-        setText(this.fpsMs, `${ms} ms`);
+        setText(this.fpsMs, `${msStr} ms`);
         if (fps >= 30) {
           this.fpsVal.className = 'ow-fps-val';
         } else if (fps >= 20) {
@@ -529,9 +531,8 @@ export class UiSystem {
         } else {
           this.fpsVal.className = 'ow-fps-val bad';
         }
-        this._fpsAccum = 0;
         this._fpsFrames = 0;
-        this._lastFpsUpdate = t.raw;
+        this._lastFpsTime = now;
       }
     } else {
       setStyle(this.fpsEl, 'display', 'none');

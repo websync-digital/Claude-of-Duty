@@ -218,14 +218,10 @@ export class RenderSystem {
     this.composite = createComposite(this.lut);
     this.viewComposite = createViewComposite();
     this.fxaa = q.taa ? null : (q.fxaa !== false ? createFxaa() : null);
-    // MSAA on the viewmodel target only. It is the one buffer whose geometric
-    // edges no longer get a temporal filter, and 4x on a single small pass is
-    // far cheaper than any spatial substitute at the same quality.
     this._viewSamples = this.qLevel >= 2 ? 4 : this.qLevel >= 1 ? 2 : 0;
 
-    // Always on: depthTexture/velocityTexture are part of the public contract
-    // (soft particles, SSR, motion blur) even when our own effects are off.
-    this.needsPrepass = true;
+    // Dynamically bypassed on low-end/potato presets to eliminate the entire second geometry draw pass
+    this.needsPrepass = !!(this.gtao || this.ssr || this.motionBlur || this.contact || this.taa);
 
     this.hdrRt = null;
     this.viewRt = null;
@@ -547,6 +543,8 @@ export class RenderSystem {
       } else if (!q.bloom && this.bloom) {
         this.bloom = null;
       }
+
+      this.needsPrepass = !!(this.gtao || this.ssr || this.motionBlur || this.contact || this.taa);
 
       const curW = this.ctx.canvas.clientWidth || 1920;
       const curH = this.ctx.canvas.clientHeight || 1080;
@@ -1022,11 +1020,12 @@ export class RenderSystem {
       let transparent = false;
       if (Array.isArray(mat)) {
         for (let i = 0; i < mat.length; i++) {
-          this.patcher.patch(mat[i]);
-          if (mat[i] && mat[i].transparent === true) transparent = true;
+          const m = mat[i];
+          if (m && !m.__owPatched) { this.patcher.patch(m); m.__owPatched = true; }
+          if (m && m.transparent === true) transparent = true;
         }
       } else if (mat) {
-        this.patcher.patch(mat);
+        if (!mat.__owPatched) { this.patcher.patch(mat); mat.__owPatched = true; }
         transparent = mat.transparent === true;
       }
 
@@ -1494,8 +1493,6 @@ export class RenderSystem {
       this._collectViewScene(viewScene);
 
       renderer.setRenderTarget(this.viewRt);
-      // Transparent clear: the composite needs coverage, and the MSAA resolve
-      // turns partially covered edge pixels into premultiplied fractional alpha.
       renderer.setClearColor(0x000000, 0);
       renderer.clear(true, true, false);
       renderer.render(viewScene, viewCamera);
@@ -1523,9 +1520,6 @@ export class RenderSystem {
     }
 
     // ---- 12. ADS depth of field ------------------------------------------
-    // World only, and only while the sights are actually up. The viewmodel is
-    // composited afterwards, so the optic body and the reticle stay sharp by
-    // construction rather than by masking.
     if (this.dof && this._adsT > 0.01 && this.needsPrepass) {
       const dofOut = this.pingRt[this._pingIndex];
       color = this.dof.render(
@@ -1551,11 +1545,6 @@ export class RenderSystem {
     }
 
     // ---- 14. viewmodel composite -----------------------------------------
-    // After the registered passes on purpose: the volumetric fog and haze pass
-    // are depth-driven and the gbuffer now holds the WORLD depth at the gun's
-    // pixels, so compositing earlier would bury the weapon in 40 m of aerial
-    // perspective. Before metering and bloom, so the muzzle flash still meters
-    // and still blooms.
     if (this._viewVisible) {
       const vu = this.viewComposite.uniforms;
       const out = this.pingRt[this._pingIndex];

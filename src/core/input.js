@@ -116,7 +116,10 @@ export class Input {
 
   _onMouseDown(e) {
     if (!this.enabled) return;
-    if (!this.pointerLocked && e.button === 0) this.requestPointerLock();
+    const hasModal = document.querySelector('.ow-loader') || document.querySelector('.ow-menu[style*="display: flex"]');
+    if (!this.pointerLocked && e.button === 0 && !hasModal && (e.target === this.canvas || e.target === document.body)) {
+      this.requestPointerLock();
+    }
     this._pendingDown.add(`Mouse${e.button}`);
   }
 

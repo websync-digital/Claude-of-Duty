@@ -184,53 +184,19 @@ export async function prewarm(engine, { onProgress = () => {}, transients = fals
       cam.position.set(...p.pos);
       cam.lookAt(...p.look);
       cam.updateMatrixWorld(true);
+      await yieldFrame();
       await compile();
       tick();
-      // Drawing real frames here would reach the depth/shadow and post-processing
-      // variants too, but engine.step() advances every subsystem's internal state
-      // (AI transforms, exposure adaptation, particle cursors) and NONE of that is
-      // restorable from core. The pixel gate measured up-to-180/255 deltas from it.
-      // So this is opt-in and off: compileAsync only, which mutates nothing.
-      if (drawFrames) {
-        engine.step();
-        await yieldFrame();
-        engine.step();
-        await yieldFrame();
-      }
-      tick();
+      await yieldFrame();
     }
 
-    // Pass 1b: THE SUBSYSTEM HOOKS. This is the `prewarmMaterials()` contract the
-    // doc comment above says is missing — "a prewarmMaterials() on each subsystem
-    // that builds and compiles its materials WITHOUT spawning gameplay objects".
-    // It is now implemented by render, world and ai, and it reaches exactly what
-    // `compileAsync(scene, camera)` provably cannot:
-    //
-    //   render  the CSM depth pass, the MRT prepass and the ~13 full-screen post
-    //           materials (blitted into a 4x4 scratch). +34-40 programs.
-    //   world   the CSM-depth and prepass override variants of the level geometry,
-    //           in their plain / instanced / instanced+instanceColor flavours,
-    //           compiled at the stabilised light count. +35 programs.
-    //   ai      the 26 character materials and their skinned + depth variants,
-    //           against a dummy SkinnedMesh on the real skeleton. +7 programs.
-    //           (ai also calls this itself at the end of init(); it is idempotent.)
-    //
-    // None of them draws a gameplay frame, steps the engine, touches the clock or
-    // the RNG, so none of the restore machinery above applies to them — which is
-    // why this replaces the `drawFrames` option rather than extending it.
-    //
-    // The camera goes back to its real pose FIRST: render's hook runs the shadow
-    // and prepass passes for real (at frame 0, where it is pixel-clean), and there
-    // is no reason to fit the cascades to a warm-up pose the game never uses.
+    // Pass 1b: THE SUBSYSTEM HOOKS.
     cam.position.copy(saved.pos);
     cam.quaternion.copy(saved.quat);
     cam.fov = saved.fov;
     cam.updateProjectionMatrix();
     cam.updateMatrixWorld(true);
 
-    // render goes first, deliberately: it patches every lit material with the
-    // CSM/AO/SSR injection, and a program compiled off an UNPATCHED material is
-    // thrown away by the first frame that walks the scene.
     const hooks = [];
     const renderSys = engine.registry.peek?.('render');
     if (renderSys && typeof renderSys.prewarmMaterials === 'function') hooks.push(renderSys);
@@ -243,12 +209,15 @@ export async function prewarm(engine, { onProgress = () => {}, transients = fals
     for (const sys of hooks) {
       const id = sys.constructor?.id ?? '?';
       try {
+        await yieldFrame();
         const arg = sys === renderSys ? { post: true, shadow: RENDER_SHADOW_WARM } : engine.ctx;
         hookResults[id] = (await sys.prewarmMaterials(arg)) ?? { ok: true };
+        tick();
       } catch (err) {
         // An optional hook must never be able to block boot.
         hookResults[id] = { ok: false, reason: String(err?.message ?? err) };
       }
+      await yieldFrame();
     }
     engine.__prewarmHooks = hookResults;
 

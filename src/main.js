@@ -16,6 +16,7 @@ import { AudioSystem } from './audio/index.js';
 import { installShotApi } from './dev/shots.js';
 import { prewarm } from './core/prewarm.js';
 import { LoadingScreen } from './ui/loader.js';
+import { TacticalCursor } from './ui/cursor.js';
 
 const params = new URLSearchParams(location.search);
 const capture = params.get('capture') === '1';
@@ -34,6 +35,7 @@ if (params.has('q')) {
 const config = createConfig(configOverrides);
 
 const canvas = document.getElementById('game');
+const cursor = capture ? null : new TacticalCursor();
 const loader = capture ? null : new LoadingScreen();
 
 const engine = new Engine({ canvas, config });
@@ -94,9 +96,14 @@ if (lockstep) {
   const readyProbe = () => {
     if (++warm >= BOOT_FRAMES) {
       window.__READY__ = true;
-      loader?.setReady(() => {
+      if (params.get('fast') === '1' || params.get('skip') === '1') {
+        loader?.dismiss();
         engine.ctx.input?.requestPointerLock?.();
-      });
+      } else {
+        loader?.setReady(() => {
+          engine.ctx.input?.requestPointerLock?.();
+        });
+      }
       return;
     }
     requestAnimationFrame(readyProbe);
@@ -104,7 +111,20 @@ if (lockstep) {
   requestAnimationFrame(readyProbe);
 }
 
+// Global live development handles for instant real-time tweaking in DevTools
 window.__ENGINE__ = engine;
+window.__CTX__ = engine.ctx;
+window.__CONFIG__ = engine.ctx.config;
+window.__PLAYER__ = engine.ctx.peek('player');
+window.__WEAPONS__ = engine.ctx.peek('weapons');
+window.__DEV__ = {
+  setFps(fps) { engine.ctx.config.setQuality(fps <= 30 ? 'verylow' : 'medium'); },
+  setFov(fov) { engine.camera.fov = fov; engine.camera.updateProjectionMatrix(); },
+  godMode() { const p = engine.ctx.peek('player'); if (p) p.health.value = 99999; },
+  spawnEnemy() { engine.ctx.peek('ai')?.debugStage?.('firefight'); },
+  heal() { engine.ctx.peek('player')?.health?.heal(100); },
+  setQuality(q) { engine.ctx.config.setQuality(q); engine.ctx.events.emit('ui:quality', { quality: q }); },
+};
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => engine.dispose());

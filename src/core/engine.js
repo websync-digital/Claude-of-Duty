@@ -75,15 +75,21 @@ export class Engine {
   async init(onProgress) {
     const order = this.registry.resolve();
     let index = 0;
+    const yieldFrame = () => new Promise((resolve) => {
+      requestAnimationFrame(() => setTimeout(resolve, 0));
+    });
+
     for (const sys of order) {
       const id = sys.constructor.id;
       onProgress?.({ index, total: order.length, id });
+      await yieldFrame();
       const t0 = performance.now();
       await sys.init?.(this.ctx);
       const ms = performance.now() - t0;
       if (ms > 50) console.info(`[engine] ${id} init ${ms.toFixed(0)}ms`);
       index++;
       onProgress?.({ index, total: order.length, id });
+      await yieldFrame();
     }
     this.input.attach();
     addEventListener('resize', this._onResize);

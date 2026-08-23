@@ -333,6 +333,7 @@ export class SkySystem {
       steps: Math.max(8, steps),
       scale: 0.5,
     });
+    this.volumetrics.enabled = !!q.volumetrics;
     this._unregisterPass = r.registerPass(this.volumetrics);
 
     // ---- bookkeeping ------------------------------------------------------
@@ -363,7 +364,9 @@ export class SkySystem {
 
     const onSettingChange = () => {
       if (this.volumetrics) {
-        this.volumetrics.marchEnabled = !!this.ctx.config.q?.volumetrics;
+        const isVol = !!this.ctx.config.q?.volumetrics;
+        this.volumetrics.enabled = isVol;
+        this.volumetrics.marchEnabled = isVol;
         this.volumetrics.reset();
       }
     };

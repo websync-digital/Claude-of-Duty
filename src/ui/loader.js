@@ -159,9 +159,6 @@ export class LoadingScreen {
         <div class="ow-loader-bar-bg">
           <div class="ow-loader-bar-fill" id="ow-loader-bar"></div>
         </div>
-        <button type="button" class="ow-loader-btn" id="ow-loader-btn">
-          DEPLOY OPERATOR (CLICK TO START)
-        </button>
       </div>
 
       <div class="ow-loader-footer">
@@ -240,32 +237,24 @@ export class LoadingScreen {
   setReady(onDeploy) {
     if (this.isReady) return;
     this.isReady = true;
-    this.updateProgress(100, 'MISSION READY. TACTICAL SYSTEMS ONLINE.');
+    this.updateProgress(100, 'MISSION READY // DEPLOYING OPERATOR...');
     if (this.barEl) {
       this.barEl.style.background = 'linear-gradient(90deg, #3db845, #a8e86a)';
       this.barEl.style.boxShadow = '0 0 16px rgba(168, 232, 106, 0.8)';
     }
 
-    if (this.btnEl) {
-      this.btnEl.style.display = 'flex';
-      const handleDeploy = () => {
-        this.dismiss();
-        onDeploy?.();
-      };
-      this.btnEl.addEventListener('click', handleDeploy);
-      this.root.addEventListener('click', handleDeploy);
-    }
+    // Auto-start immediately into the match without clicking
+    setTimeout(() => {
+      this.dismiss();
+      onDeploy?.();
+    }, 280);
   }
 
   dismiss() {
     clearInterval(this._tipInterval);
     if (!this.root) return;
-    this.root.style.opacity = '0';
-    this.root.style.transform = 'scale(1.02)';
-    this.root.style.pointerEvents = 'none';
-    setTimeout(() => {
-      this.root?.remove();
-      this.root = null;
-    }, 600);
+    this.root.style.display = 'none';
+    this.root.remove();
+    this.root = null;
   }
 }

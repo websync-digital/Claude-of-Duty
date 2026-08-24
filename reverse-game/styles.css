@@ -1,0 +1,723 @@
+/* ==========================================================================
+   Tactical Military & Cyberpunk Stylesheet for Reverse Game
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&display=swap');
+
+:root {
+  --font-primary: 'Rajdhani', sans-serif;
+  --font-display: 'Orbitron', monospace;
+
+  --color-cyan: #00f0ff;
+  --color-cyan-glow: rgba(0, 240, 255, 0.4);
+  --color-amber: #f59e0b;
+  --color-red: #ff0055;
+  --color-dark-bg: #0b0e14;
+  --color-panel-bg: rgba(13, 17, 23, 0.88);
+  --color-border: rgba(0, 240, 255, 0.25);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+.hidden {
+  display: none !important;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--color-dark-bg);
+  font-family: var(--font-primary);
+  color: #e2e8f0;
+}
+
+#canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   HUD Overlay Layer
+   ========================================================================== */
+
+#hud-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* FPS Counter */
+#hud-fps-counter {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-cyan);
+  background: rgba(0, 0, 0, 0.6);
+  padding: 4px 10px;
+  border-radius: 4px;
+  border-left: 3px solid var(--color-cyan);
+  letter-spacing: 1px;
+}
+
+/* Top Right Pause Button */
+#hud-pause-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  pointer-events: auto;
+  background: rgba(13, 17, 23, 0.75);
+  border: 1px solid var(--color-border);
+  color: var(--color-cyan);
+  padding: 6px 14px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+#hud-pause-btn:hover {
+  background: var(--color-cyan);
+  color: #000;
+  box-shadow: 0 0 12px var(--color-cyan-glow);
+}
+
+/* Radar Minimap */
+#hud-radar-container {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(11, 14, 20, 0.7);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  padding: 4px;
+  box-shadow: 0 0 14px rgba(0, 0, 0, 0.8);
+}
+
+#hud-radar-canvas {
+  display: block;
+}
+
+/* Crosshair & Hitmarker */
+#hud-crosshair-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+}
+
+#hud-crosshair {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition: opacity 0.15s ease;
+}
+
+.ch-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: var(--color-cyan);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 6px var(--color-cyan);
+}
+
+.ch-line {
+  position: absolute;
+  background: rgba(0, 240, 255, 0.75);
+}
+
+.ch-top { top: 0; left: 50%; width: 2px; height: 8px; transform: translateX(-50%); }
+.ch-bottom { bottom: 0; left: 50%; width: 2px; height: 8px; transform: translateX(-50%); }
+.ch-left { top: 50%; left: 0; width: 8px; height: 2px; transform: translateY(-50%); }
+.ch-right { top: 50%; right: 0; width: 8px; height: 2px; transform: translateY(-50%); }
+
+/* Hitmarker */
+#hud-hitmarker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.05s ease;
+}
+
+#hud-hitmarker.active {
+  opacity: 1;
+}
+
+.hm-line {
+  position: absolute;
+  background: #ffffff;
+  box-shadow: 0 0 6px #fff;
+}
+
+#hud-hitmarker.headshot .hm-line {
+  background: var(--color-red);
+  box-shadow: 0 0 10px var(--color-red);
+}
+
+.hm-1 { top: 0; left: 50%; width: 2px; height: 8px; transform: translateX(-50%); }
+.hm-2 { bottom: 0; left: 50%; width: 2px; height: 8px; transform: translateX(-50%); }
+.hm-3 { top: 50%; left: 0; width: 8px; height: 2px; transform: translateY(-50%); }
+.hm-4 { top: 50%; right: 0; width: 8px; height: 2px; transform: translateY(-50%); }
+
+/* Damage Overlay */
+#hud-damage-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 40%, rgba(255, 0, 50, 0.65) 100%);
+  opacity: 0;
+  transition: opacity 0.1s ease-out;
+}
+
+/* Bottom Left: Health & Shields */
+#hud-vitals {
+  position: absolute;
+  bottom: 28px;
+  left: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--color-panel-bg);
+  padding: 12px 18px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(10px);
+}
+
+.vital-bar-wrap {
+  width: 220px;
+}
+
+.vital-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.vital-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+#hud-health-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  transition: width 0.15s ease;
+}
+
+#hud-shield-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #0ea5e9, var(--color-cyan));
+  box-shadow: 0 0 8px var(--color-cyan-glow);
+  transition: width 0.15s ease;
+}
+
+/* Bottom Center: Temporal Powers (Rewind & Bullet-Time) */
+#hud-temporal-status {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 20px;
+  background: var(--color-panel-bg);
+  padding: 10px 24px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(10px);
+}
+
+.temporal-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.temporal-gauge span {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.gauge-track {
+  width: 130px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+#hud-rewind-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #3b82f6, var(--color-cyan));
+  box-shadow: 0 0 10px var(--color-cyan-glow);
+  transition: width 0.1s linear;
+}
+
+#hud-rewind-fill.pulsing {
+  animation: pulseRewind 0.4s infinite alternate;
+}
+
+@keyframes pulseRewind {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.8); }
+}
+
+#hud-bullet-time-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #d97706, var(--color-amber));
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+  transition: width 0.1s linear;
+}
+
+/* Bottom Right: Ammunition */
+#hud-ammo {
+  position: absolute;
+  bottom: 28px;
+  right: 32px;
+  background: var(--color-panel-bg);
+  padding: 12px 24px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(10px);
+  text-align: right;
+}
+
+.ammo-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 6px;
+  font-family: var(--font-display);
+}
+
+#hud-ammo-current {
+  font-size: 38px;
+  font-weight: 900;
+  color: var(--color-cyan);
+  text-shadow: 0 0 12px var(--color-cyan-glow);
+}
+
+.ammo-divider {
+  font-size: 20px;
+  color: #64748b;
+}
+
+#hud-ammo-total {
+  font-size: 20px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.weapon-name {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--color-amber);
+  margin-top: 2px;
+}
+
+.fire-mode-tag {
+  color: var(--color-cyan);
+  background: rgba(0, 240, 255, 0.12);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+.weapon-slots {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.slot-tag {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.slot-tag.active {
+  color: #000;
+  background: var(--color-cyan);
+  border-color: var(--color-cyan);
+  box-shadow: 0 0 8px var(--color-cyan-glow);
+}
+
+/* ==========================================================================
+   Modals & Menus (Start Screen & Tactical Pause Menu)
+   ========================================================================== */
+
+.modal-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 9, 14, 0.88);
+  backdrop-filter: blur(16px);
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.modal-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.modal-box {
+  width: 640px;
+  max-width: 90vw;
+  background: rgba(13, 17, 23, 0.95);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 32px;
+  box-shadow: 0 0 35px rgba(0, 240, 255, 0.15);
+}
+
+.modal-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.modal-header h1 {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: var(--color-cyan);
+  text-shadow: 0 0 16px var(--color-cyan-glow);
+}
+
+.modal-header p {
+  color: #94a3b8;
+  font-size: 14px;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+/* Keybinds Grid in Splash */
+.keybinds-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 28px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.key-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+kbd {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  background: #1e293b;
+  color: var(--color-cyan);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+}
+
+/* Primary Action Buttons */
+.btn-primary {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #000;
+  background: var(--color-cyan);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 20px var(--color-cyan-glow);
+}
+
+.btn-primary:hover {
+  background: #fff;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   Tactical Pause & Settings Multi-Tab Menu
+   ========================================================================== */
+
+.pause-menu-tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 20px;
+}
+
+.menu-tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 10px 4px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #94a3b8;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.menu-tab-btn:hover {
+  color: #fff;
+}
+
+.menu-tab-btn.active {
+  color: var(--color-cyan);
+  border-bottom-color: var(--color-cyan);
+}
+
+.menu-tab-content {
+  display: none;
+  min-height: 240px;
+}
+
+.menu-tab-content.active {
+  display: block;
+}
+
+/* Settings Form Controls */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.setting-row label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.preset-group {
+  display: flex;
+  gap: 8px;
+}
+
+.preset-btn {
+  background: #1e293b;
+  border: 1px solid var(--color-border);
+  color: #e2e8f0;
+  padding: 6px 12px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-btn.active {
+  background: var(--color-cyan);
+  color: #000;
+  box-shadow: 0 0 10px var(--color-cyan-glow);
+}
+
+input[type="range"] {
+  accent-color: var(--color-cyan);
+  cursor: pointer;
+}
+
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-cyan);
+  cursor: pointer;
+}
+
+/* Telemetry Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.stat-val {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-cyan);
+}
+
+/* Modal Actions */
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-secondary {
+  flex: 1;
+  padding: 12px;
+  background: #1e293b;
+  border: 1px solid var(--color-border);
+  color: #e2e8f0;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: #334155;
+  color: #fff;
+}
+
+.btn-danger {
+  padding: 12px 18px;
+  background: rgba(255, 0, 85, 0.2);
+  border: 1px solid var(--color-red);
+  color: var(--color-red);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+  background: var(--color-red);
+  color: #fff;
+}
+
+/* Center Casualty Banner */
+.hud-casualty-banner {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 14, 20, 0.88);
+  border: 1px solid var(--color-red);
+  box-shadow: 0 0 30px rgba(255, 0, 85, 0.4), inset 0 0 15px rgba(255, 0, 85, 0.2);
+  padding: 24px 36px;
+  border-radius: 8px;
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+  animation: pulse-casualty 1.5s infinite alternate;
+}
+
+@keyframes pulse-casualty {
+  0% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 20px rgba(255, 0, 85, 0.3); }
+  100% { transform: translate(-50%, -50%) scale(1.02); box-shadow: 0 0 35px rgba(255, 0, 85, 0.6); }
+}
+
+.death-title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--color-red);
+  letter-spacing: 3px;
+  text-shadow: 0 0 12px rgba(255, 0, 85, 0.8);
+}
+
+.death-sub {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #e2e8f0;
+  letter-spacing: 1px;
+}
+
+.death-countdown {
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--color-cyan);
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  margin-top: 4px;
+}
